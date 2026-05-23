@@ -1,0 +1,20 @@
+# OS
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+
+# Python envs
+.venv/
+venv/
+*.egg-info/
+
+# Logs (keep structure, ignore content)
+logs/*.json
+
+# Ollama model weights (stored on SSD, not tracked)
+../ollama_models/
+
+# Editor
+.vscode/
+.idea/

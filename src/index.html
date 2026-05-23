@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR-CRC | Visible Reasoning for Colorectal Cancer</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            background: radial-gradient(circle at top left, #1e1b4b, #020617, #000000);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+        }
+
+        .terminal-box {
+            background: #000000;
+            color: #34d399; /* Neon green */
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid #334155;
+            box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.05);
+            border-radius: 8px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .glow-button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        
+        .glow-button:hover {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Custom Scrollbar for Terminal */
+        .terminal-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        .terminal-box::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .terminal-box::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        
+        select, input[type="text"], input[type="number"] {
+            background-color: rgba(30, 41, 59, 0.8);
+            border: 1px solid #475569;
+            color: #e2e8f0;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 tracking-tight">
+                VR-CRC <span class="text-sm font-normal text-slate-400 ml-2">v1.0 (Zero-Cloud Medical AI)</span>
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Visible Reasoning System for Colorectal Cancer Prognosis & Dynamic Therapy</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span class="text-xs font-mono text-emerald-400">deepseek-r1:8b (Ollama Local) ONLINE</span>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Input Panel (Patient Features) -->
+        <div class="lg:col-span-4 glass-panel p-6 space-y-6">
+            <h2 class="text-xl font-semibold text-slate-200 border-b border-slate-700 pb-2">🩺 患者多次元特徴量ベクトル</h2>
+            
+            <form id="patient-form" class="space-y-4 text-sm">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-400 mb-1">部位・左右差</label>
+                        <select id="sidedness" class="w-full rounded p-2">
+                            <option value="右側 (Right-sided)">右側 (Right-sided)</option>
+                            <option value="左側 (Left-sided)">左側 (Left-sided)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">詳細解剖部位</label>
+                        <select id="location" class="w-full rounded p-2">
+                            <option>盲腸</option><option>上行結腸</option><option>横行結腸</option>
+                            <option>下行結腸</option><option>S状結腸</option>
+                            <option>上部直腸(Ra)</option><option>中部直腸(Rb)</option><option>下部直腸(Rc)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">T因子</label>
+                        <select id="t-factor" class="w-full rounded p-2">
+                            <option>1(SM)</option><option>2</option><option>3</option><option selected>4</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">N因子</label>
+                        <select id="n-factor" class="w-full rounded p-2">
+                            <option>0</option><option selected>1</option><option>2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">M因子</label>
+                        <select id="m-factor" class="w-full rounded p-2">
+                            <option selected>0</option><option>1</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">RAS</label>
+                        <select id="ras" class="w-full rounded p-2">
+                            <option>Wild</option><option>Mutant</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">BRAF</label>
+                        <select id="braf" class="w-full rounded p-2">
+                            <option>Wild</option><option>V600E</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">MMR/MSI</label>
+                        <select id="mmr" class="w-full rounded p-2">
+                            <option>pMMR/MSS</option><option>dMMR/MSI-H</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-1">予定術式</label>
+                    <select id="surgery" class="w-full rounded p-2">
+                        <option>結腸右半切除術</option><option>結腸左半切除術</option>
+                        <option>低位前方切除術 (LAR)</option><option>腹会陰式直腸切除術 (APR)</option>
+                        <option>ESD</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2 border border-slate-700 rounded p-3 bg-slate-800/30">
+                    <label class="block text-slate-300 font-semibold mb-2">局所・全身動的制御</label>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="preop_crt" class="rounded bg-slate-700">
+                        <label for="preop_crt" class="text-slate-300">術前CRT</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="tnt" class="rounded bg-slate-700">
+                        <label for="tnt" class="text-slate-300">TNT (Total Neoadjuvant Therapy)</label>
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-slate-400 text-xs mb-1">術後補助化学療法・分子標的薬</label>
+                        <input type="text" id="adjuvant" class="w-full rounded p-2" placeholder="例: FOLFOX + Bevacizumab">
+                    </div>
+                </div>
+
+                <button type="button" id="btn-predict" class="glow-button w-full py-3 rounded-lg text-white font-bold tracking-wide mt-4 flex justify-center items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    推論実行 (Run Inference)
+                </button>
+            </form>
+        </div>
+
+        <!-- Right: Output & Analytics Area -->
+        <div class="lg:col-span-8 space-y-6">
+            
+            <!-- Visible Reasoning Area -->
+            <div class="glass-panel p-6 flex flex-col h-[400px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        Medical Chain-of-Thought <span class="text-xs text-slate-500 font-normal">(医師の脳内実況ログ)</span>
+                    </h2>
+                    <span id="status-badge" class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">IDLE</span>
+                </div>
+                
+                <div id="terminal" class="terminal-box flex-1 p-4 text-sm relative">
+                    <div id="terminal-content" class="pb-8">アソシエーション・シーケンス待機中...</div>
+                    <div id="cursor" class="inline-block w-2 h-4 bg-emerald-400 animate-pulse hidden"></div>
+                </div>
+            </div>
+
+            <!-- Prediction Results & Chart -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Result Summary -->
+                <div class="glass-panel p-6">
+                    <h3 class="text-slate-400 text-sm font-semibold mb-4">🩺 AI 推論サマリー (JSON)</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                            <span class="text-slate-300">15年生存率</span>
+                            <span id="out-survival" class="text-2xl font-bold text-emerald-400">--%</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                            <span class="text-slate-300">局所/遠隔再発リスク</span>
+                            <span id="out-recurrence" class="text-lg font-bold text-amber-400">--</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 text-xs block mb-1">決定的臨床要因</span>
+                            <p id="out-reasoning" class="text-sm text-slate-200 bg-slate-800/50 p-3 rounded italic border-l-4 border-purple-500 min-h-[60px]">
+                                推論完了後に表示されます。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kaplan-Meier Chart -->
+                <div class="glass-panel p-6">
+                    <h3 class="text-slate-400 text-sm font-semibold mb-2">📈 予測15年生存曲線 (Kaplan-Meier)</h3>
+                    <div class="relative h-[200px] w-full">
+                        <canvas id="kmChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback & Auto-Calibration -->
+            <div class="glass-panel p-6 border-t-2 border-amber-500/50">
+                <h3 class="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    フィードバック＆自動キャリブレーション (Human-in-the-Loop)
+                </h3>
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label class="block text-slate-400 text-xs mb-1">実際の患者の実績15年生存（％）または転帰</label>
+                        <input type="number" id="actual-survival" class="w-full rounded p-2 text-sm" placeholder="例: 65">
+                    </div>
+                    <button id="btn-feedback" class="px-4 py-2 bg-slate-700 hover:bg-amber-600 text-white text-sm font-semibold rounded transition-colors whitespace-nowrap">
+                        ズレを記録 (discrepancy_log)
+                    </button>
+                </div>
+                <p id="feedback-msg" class="text-xs text-emerald-400 mt-2 hidden">✅ 実績をローカルに記録しました。次回以降のFew-Shotプロンプトに補正値が適用されます。</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Chart.js Initialization ---
+    const ctx = document.getElementById('kmChart').getContext('2d');
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = 'Inter';
+    
+    let kmChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [0, 1, 3, 5, 10, 15], // Years
+            datasets: [{
+                label: '予測生存率 (%)',
+                data: [100, 100, 100, 100, 100, 100],
+                borderColor: '#34d399',
+                backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                borderWidth: 2,
+                stepped: true, // Kaplan-Meier style
+                fill: true,
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { min: 0, max: 100, grid: { color: '#334155' } },
+                x: { grid: { color: '#334155' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // --- State & DOM Elements ---
+    const termContent = document.getElementById('terminal-content');
+    const termBox = document.getElementById('terminal');
+    const cursor = document.getElementById('cursor');
+    const statusBadge = document.getElementById('status-badge');
+    const btnPredict = document.getElementById('btn-predict');
+    let isInferencing = false;
+    let currentPredictionRaw = "";
+    let predictedRateValue = 0;
+
+    // --- Inference Logic ---
+    btnPredict.addEventListener('click', async () => {
+        if(isInferencing) return;
+        isInferencing = true;
+        btnPredict.disabled = true;
+        btnPredict.classList.add('opacity-50', 'cursor-not-allowed');
+        
+        statusBadge.textContent = "THINKING...";
+        statusBadge.className = "px-2 py-1 text-xs rounded bg-purple-600 text-white animate-pulse";
+        
+        termContent.innerHTML = "";
+        cursor.classList.remove('hidden');
+        currentPredictionRaw = "";
+
+        // Get Input Data
+        const patientData = {
+            sidedness: document.getElementById('sidedness').value,
+            location: document.getElementById('location').value,
+            T: document.getElementById('t-factor').value,
+            N: document.getElementById('n-factor').value,
+            M: document.getElementById('m-factor').value,
+            RAS: document.getElementById('ras').value,
+            BRAF: document.getElementById('braf').value,
+            MMR: document.getElementById('mmr').value,
+            surgery: document.getElementById('surgery').value,
+            preop_crt: document.getElementById('preop_crt').checked,
+            tnt: document.getElementById('tnt').checked,
+            adjuvant: document.getElementById('adjuvant').value
+        };
+
+        try {
+            // NOTE: This calls the local Python backend to proxy Ollama and avoid CORS issues
+            const response = await fetch('/api/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(patientData)
+            });
+
+            if (!response.body) throw new Error("No response body");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                currentPredictionRaw += chunk;
+
+                // Simple real-time extraction for UI streaming
+                // Extract text inside <think> tags for the terminal
+                const thinkMatch = currentPredictionRaw.match(/<think>([\s\S]*?)(<\/think>|$)/);
+                if (thinkMatch) {
+                    termContent.textContent = thinkMatch[1];
+                    termBox.scrollTop = termBox.scrollHeight;
+                }
+            }
+
+            // Post-processing after stream completes
+            parseAndDisplayResult(currentPredictionRaw);
+
+        } catch (error) {
+            termContent.textContent += `\n\n[System Error] 接続失敗: ${error.message}\nバックエンドサーバー (app.py) が起動しているか確認してください。`;
+        } finally {
+            isInferencing = false;
+            btnPredict.disabled = false;
+            btnPredict.classList.remove('opacity-50', 'cursor-not-allowed');
+            statusBadge.textContent = "COMPLETED";
+            statusBadge.className = "px-2 py-1 text-xs rounded bg-emerald-600 text-white";
+            cursor.classList.add('hidden');
+        }
+    });
+
+    function parseAndDisplayResult(raw) {
+        // Find JSON in the output
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            try {
+                const data = JSON.parse(jsonMatch[0]);
+                
+                // Update UI
+                const survRate = data.predicted_15y_survival_rate || "N/A";
+                document.getElementById('out-survival').textContent = survRate;
+                document.getElementById('out-recurrence').textContent = 
+                    `${data.estimated_recurrence_risk || '不明'} / ${data.estimated_distant_metastasis_risk || '不明'}`;
+                document.getElementById('out-reasoning').textContent = data.key_clinical_reasoning || "理由の抽出に失敗しました。";
+
+                // Update Chart (mock curve based on final prediction)
+                // Extract number from string like "75%"
+                const rateNum = parseFloat(survRate.replace(/[^0-9.]/g, ''));
+                if(!isNaN(rateNum)) {
+                    predictedRateValue = rateNum;
+                    const decay = (100 - rateNum) / 4;
+                    kmChart.data.datasets[0].data = [
+                        100, 
+                        100 - (decay * 0.5), 
+                        100 - (decay * 1.5), 
+                        100 - (decay * 2.5), 
+                        100 - (decay * 3.5), 
+                        rateNum
+                    ];
+                    // Change color based on prognosis
+                    const color = rateNum > 70 ? '#34d399' : (rateNum > 40 ? '#fbbf24' : '#ef4444');
+                    kmChart.data.datasets[0].borderColor = color;
+                    kmChart.data.datasets[0].backgroundColor = color + '1A'; // add alpha
+                    kmChart.update();
+                }
+
+            } catch(e) {
+                console.error("JSON Parse Error", e);
+            }
+        }
+    }
+
+    // --- Feedback Logic ---
+    document.getElementById('btn-feedback').addEventListener('click', async () => {
+        const actualVal = document.getElementById('actual-survival').value;
+        if(!actualVal) return alert("実績値を入力してください。");
+        
+        const actualNum = parseFloat(actualVal);
+        const delta = predictedRateValue - actualNum;
+
+        const payload = {
+            timestamp: new Date().toISOString(),
+            predicted: predictedRateValue,
+            actual: actualNum,
+            delta: delta,
+            context: "User feedback from Web UI"
+        };
+
+        try {
+            const res = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if(res.ok) {
+                const msg = document.getElementById('feedback-msg');
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 5000);
+            }
+        } catch(e) {
+            alert("フィードバック保存に失敗しました: " + e.message);
+        }
+    });
+
+</script>
+</body>
+</html>
