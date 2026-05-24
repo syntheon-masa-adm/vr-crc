@@ -174,7 +174,7 @@ python3 src/sanity_check.py
 ```bash
 pip install flask
 python3 src/app.py
-# → Open http://localhost:5000
+# → Open http://localhost:5050
 ```
 
 ### Step 4: CLI Reasoning (Optional)
