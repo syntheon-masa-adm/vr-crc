@@ -54,12 +54,15 @@ def run_medical_sanity_prompt() -> bool:
             result = json.loads(resp.read())
             elapsed = time.time() - start
             response_text = result.get("response", "")
+            thinking_text = result.get("thinking", "")
+            full_text = f"<think>\n{thinking_text}\n</think>\n{response_text}" if thinking_text else response_text
+            
             print(f"  ✅ Response received in {elapsed:.1f}s")
             print(f"  📋 Model Output (truncated):\n")
             print("  " + "-" * 60)
-            print("  " + response_text[:500].replace("\n", "\n  "))
+            print("  " + full_text[:500].replace("\n", "\n  "))
             print("  " + "-" * 60)
-            return bool(response_text)
+            return bool(full_text)
     except Exception as e:
         print(f"  ❌ Inference Error: {e}")
         return False

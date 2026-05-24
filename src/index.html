@@ -380,21 +380,27 @@
     });
 
     function parseAndDisplayResult(raw) {
-        // Find JSON in the output
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        console.log("Raw response from Ollama:", raw);
+        
+        // thinkタグとその中身を完全に除去してJSON単体にする
+        const cleanRaw = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        console.log("Cleaned response (no think):", cleanRaw);
+
+        // 波括弧で囲まれたJSON部分を抽出
+        const jsonMatch = cleanRaw.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             try {
                 const data = JSON.parse(jsonMatch[0]);
+                console.log("Successfully parsed JSON data:", data);
                 
-                // Update UI
+                // UI表示の更新
                 const survRate = data.predicted_15y_survival_rate || "N/A";
                 document.getElementById('out-survival').textContent = survRate;
                 document.getElementById('out-recurrence').textContent = 
                     `${data.estimated_recurrence_risk || '不明'} / ${data.estimated_distant_metastasis_risk || '不明'}`;
                 document.getElementById('out-reasoning').textContent = data.key_clinical_reasoning || "理由の抽出に失敗しました。";
 
-                // Update Chart (mock curve based on final prediction)
-                // Extract number from string like "75%"
+                // Kaplan-Meier曲線の更新
                 const rateNum = parseFloat(survRate.replace(/[^0-9.]/g, ''));
                 if(!isNaN(rateNum)) {
                     predictedRateValue = rateNum;
@@ -407,16 +413,19 @@
                         100 - (decay * 3.5), 
                         rateNum
                     ];
-                    // Change color based on prognosis
                     const color = rateNum > 70 ? '#34d399' : (rateNum > 40 ? '#fbbf24' : '#ef4444');
                     kmChart.data.datasets[0].borderColor = color;
-                    kmChart.data.datasets[0].backgroundColor = color + '1A'; // add alpha
+                    kmChart.data.datasets[0].backgroundColor = color + '1A';
                     kmChart.update();
                 }
 
             } catch(e) {
                 console.error("JSON Parse Error", e);
+                document.getElementById('out-reasoning').textContent = `[パースエラー] 出力されたJSONの解析に失敗しました。ブラウザのコンソールログをご確認ください。`;
             }
+        } else {
+            console.warn("No JSON found in response");
+            document.getElementById('out-reasoning').textContent = `[エラー] JSONフォーマットが検出されませんでした。`;
         }
     }
 

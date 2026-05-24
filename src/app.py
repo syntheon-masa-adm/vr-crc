@@ -23,10 +23,7 @@ MODEL_NAME = "deepseek-r1:8b"
 SYSTEM_PROMPT = """あなたは世界最高峰の臨床腫瘍医（大腸がん専門）であり、最先端内視鏡AIの思想とASCOガイドラインを完全にマスターしたAIです。
 入力された患者の多次元特徴量ベクトルを、解剖学的再発リスク、左右差（Sidedness）による生物学的悪性度、遺伝子変異（RAS/BRAF/MMR）、TNTおよびロボット手術の生存ベネフィットの観点から冷徹に分析しなさい。
 
-1. 【潜在空間と思考の連動】
-   必ず最初に <think> タグの内部で、臨床ガイドラインや大規模疫学データの傾向を踏まえた医師の「直感的な違和感」「リスクの嗅覚」「長考プロセス」を、思考が変遷していく実況中継形式で日本語で詳細に書き出しなさい。
-
-2. <think> の外側には、厳密に以下のJSON構造のみを出力しなさい：
+思考プロセスを日本語で十分に展開した上で、最終的な回答として必ず以下のJSONフォーマットのみを出力してください（JSON以外の説明テキストを含めないこと）：
 {
   "predicted_15y_survival_rate": "XX%",
   "estimated_recurrence_risk": "Low/Moderate/High(XX%)",
@@ -53,7 +50,7 @@ def generate_few_shot_context():
 @app.route('/')
 def serve_ui():
     """単一ファイルUIを配信"""
-    return send_file('index.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'index.html'))
 
 @app.route('/api/predict', methods=['POST'])
 def proxy_predict():
@@ -93,11 +90,29 @@ def proxy_predict():
     def generate():
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
+                in_thinking = False
                 for line in resp:
                     if line:
                         chunk = json.loads(line.decode("utf-8"))
-                        if "response" in chunk:
-                            yield chunk["response"]
+                        
+                        # thinking（思考中）とresponse（回答）をストリームでハンドリング
+                        thinking = chunk.get("thinking", "")
+                        response = chunk.get("response", "")
+                        
+                        if thinking:
+                            if not in_thinking:
+                                yield "<think>\n"
+                                in_thinking = True
+                            yield thinking
+                        
+                        if response:
+                            if in_thinking:
+                                yield "\n</think>\n"
+                                in_thinking = False
+                            yield response
+                            
+                if in_thinking:
+                    yield "\n</think>\n"
         except Exception as e:
             yield f"\n\n<Ollama Error: {str(e)}>"
 
@@ -126,5 +141,5 @@ def save_feedback():
 
 if __name__ == '__main__':
     print(f"🚀 VR-CRC Co-Pilot UI Server Started!")
-    print(f"🌐 以下のURLにブラウザでアクセスしてください: http://localhost:5000")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    print(f"🌐 以下のURLにブラウザでアクセスしてください: http://localhost:5050")
+    app.run(host='0.0.0.0', port=5050, debug=False)
