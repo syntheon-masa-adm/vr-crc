@@ -26,12 +26,12 @@ from PIL import Image, ImageDraw, ImageFont
 WORKSPACE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUTPUT_PATH   = os.path.join(WORKSPACE_DIR, "assets", "qr_vrcrc.png")
 
-# QR content: local workspace path + GitHub placeholder
+# QR content: local workspace path + GitHub URL
 QR_CONTENT = "\n".join([
     "VR-CRC | Visible Reasoning for Colorectal Cancer",
     f"Local Workspace: {WORKSPACE_DIR}",
-    "GitHub: https://github.com/YOUR_HANDLE/vr-crc",
-    "Launch: python3 src/app.py  →  http://localhost:5000",
+    "GitHub: https://github.com/syntheon-masa-adm/vr-crc",
+    "Launch: python3 src/app.py  →  http://localhost:5050",
 ])
 
 # ── QR Code Generation ──────────────────────────────────────────────
